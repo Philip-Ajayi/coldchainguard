@@ -1,4 +1,5 @@
 import fs from 'fs';
+import path from 'path';
 
 interface OCRWorkerPayload {
   imagePath?: string;
@@ -30,8 +31,12 @@ async function runOcrWithQVAC(payload: OCRWorkerPayload): Promise<OCRResult> {
       throw new Error("No image data provided");
     }
 
+    const modelPath = path.resolve(process.cwd(), 'models', 'ocr-latin.gguf');
+    const modelSrc = qvac.OCR_LATIN || modelPath;
+
     const modelId = await qvac.loadModel({
-      modelType: 'ocr',
+      modelSrc,
+      modelType: 'ggml-ocr',
       modelConfig: {
         langList: ['en'],
         contrastRetry: true,
@@ -39,9 +44,9 @@ async function runOcrWithQVAC(payload: OCRWorkerPayload): Promise<OCRResult> {
       }
     });
 
-    const ocrResult = await qvac.ocr({
+    const ocrResult = qvac.ocr({
       modelId,
-      input: imageBuffer
+      image: imageBuffer
     });
 
     if (ocrResult && ocrResult.blocks) {

@@ -14,7 +14,7 @@ function cosineSimilarity(vecA: number[], vecB: number[]): number {
   let dotProduct = 0;
   let normA = 0;
   let normB = 0;
-  for (let i = 0;i < vecA.length;i++) {
+  for (let i = 0; i < vecA.length; i++) {
     dotProduct += vecA[i] * vecB[i];
     normA += vecA[i] * vecA[i];
     normB += vecB[i] * vecB[i];
@@ -41,9 +41,9 @@ async function runVectorRetrieval(query: RetrievalQuery) {
     const modelPath = path.resolve(process.cwd(), 'models', 'bge-small-en-v1.5-q8_0.gguf');
 
     const modelId = await qvac.loadModel({
-      modelType: 'embeddings',
+      modelType: 'llamacpp-embedding',
       modelSrc: modelPath,
-      modelConfig: { device: 'cpu', threads: 2 }
+      modelConfig: { threads: 2 }
     });
 
     const { embedding: queryVector } = await qvac.embed({

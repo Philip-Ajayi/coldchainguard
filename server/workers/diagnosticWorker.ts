@@ -251,12 +251,11 @@ async function runSynthesisWithQVAC(input: SynthesisInput): Promise<DiagnosticPl
     const modelPath = path.resolve(process.cwd(), 'models', 'qwen2.5-1.5b-instruct-q4_k_m.gguf');
 
     const modelId = await qvac.loadModel({
-      modelType: 'llm',
+      modelType: 'llamacpp-completion',
       modelSrc: modelPath,
       modelConfig: {
-        contextSize: 1024,
-        threads: 3,
-        device: 'cpu'
+        ctx_size: 1024,
+        threads: 3
       }
     });
 
@@ -286,18 +285,21 @@ Output pure JSON matching this exact structure:
 
     const userPrompt = `Context:\n${contextText}\n\nEquipment: ${input.compressorModel} (${input.electronicUnitCode})\nLED Blinks: ${input.blinkCode}\nDC Voltage: ${input.voltage}V\nStator Resistance: ${input.resistance ?? 'N/A'} Ohms\nGenerate electrical isolation sequence:`;
 
-    const response = await qvac.completion({
+    const response = qvac.completion({
       modelId,
-      messages: [
+      history: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
       ],
-      temperature: 0.05
+      generationParams: {
+        temperature: 0.05
+      }
     });
 
+    const rawText = await response.text;
     await qvac.unloadModel({ modelId });
 
-    const jsonMatch = response.text.match(/\{[\s\S]*\}/);
+    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0]);
     }

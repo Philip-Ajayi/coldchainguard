@@ -11,7 +11,7 @@
     {
       "name": "Host CPU Fallback",
       "defaults": {
-        "llm": {
+        "llamacpp-completion": {
           "device": "cpu",
           "threads": 3
         }
