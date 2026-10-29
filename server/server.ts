@@ -65,7 +65,7 @@ function runIsolatedWorker<TInput, TOutput>(workerRelativePath: string, payload:
       }
     });
 
-    child.send(payload);
+    child.send(payload as any);
   });
 }
 

@@ -46,7 +46,7 @@ async function runOcrWithQVAC(payload: OCRWorkerPayload): Promise<OCRResult> {
 
     const ocrResult = qvac.ocr({
       modelId,
-      image: imageBuffer
+      image: imageBuffer as any
     });
 
     if (ocrResult && ocrResult.blocks) {

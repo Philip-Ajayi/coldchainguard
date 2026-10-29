@@ -292,7 +292,7 @@ Output pure JSON matching this exact structure:
         { role: 'user', content: userPrompt }
       ],
       generationParams: {
-        temperature: 0.05
+        temp: 0.05
       }
     });
 
