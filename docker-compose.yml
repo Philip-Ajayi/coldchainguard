@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  coldchainguard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: coldchainguard-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    volumes:
+      - ./data:/app/data
+    deploy:
+      resources:
+        limits:
+          memory: 4096M

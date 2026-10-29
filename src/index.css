@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg - tactical - 950 text - slate - 100 font - sans antialiased;
+  }
+}
+
+:: -webkit - scrollbar {
+  width: 6px;
+  height: 6px;
+}
+:: -webkit - scrollbar - track {
+  background: #0a0d12;
+}
+:: -webkit - scrollbar - thumb {
+  background: #2a364d;
+  border - radius: 3px;
+}
+:: -webkit - scrollbar - thumb:hover {
+  background: #e69b00;
+}

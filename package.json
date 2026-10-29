@@ -1,0 +1,45 @@
+{
+  "name": "coldchainguard",
+  "version": "1.0.0",
+  "description": "Air-Gapped Humanitarian Vaccine Cold-Chain & Solar Refrigerator Diagnostic Co-Pilot",
+  "type": "module",
+  "main": "dist/server/server.js",
+  "scripts": {
+    "dev": "vite",
+    "build:client": "vite build",
+    "build:server": "tsc -p tsconfig.server.json",
+    "build": "npm run build:client && npm run build:server",
+    "start": "node dist/server/server.js",
+    "prod": "npm run build && node dist/server/server.js"
+  },
+  "dependencies": {
+    "@qvac/embed-llamacpp": "^0.22.0",
+    "@qvac/llm-llamacpp": "^0.22.0",
+    "@qvac/ocr-ggml": "^0.22.0",
+    "@qvac/sdk": "^0.22.0",
+    "better-sqlite3": "^11.8.1",
+    "clsx": "^2.1.1",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "lucide-react": "^0.475.0",
+    "qrcode": "^1.5.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwind-merge": "^2.6.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.13.4",
+    "@types/qrcode": "^1.5.5",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.2",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.3",
+    "vite": "^6.1.0"
+  }
+}
