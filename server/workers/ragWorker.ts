@@ -40,10 +40,10 @@ async function runVectorRetrieval(query: RetrievalQuery) {
     const qvac = await import('@qvac/sdk');
     const modelPath = path.resolve(process.cwd(), 'models', 'bge-small-en-v1.5-q8_0.gguf');
 
-    const modelId = await qvac.loadModel({
-      modelType: 'llamacpp-embedding',
+    const modelId = await (qvac as any).loadModel({
+      modelType: 'embeddings',
       modelSrc: modelPath,
-      modelConfig: { threads: 2 }
+      modelConfig: { device: 'cpu' }
     });
 
     const { embedding: queryVector } = await qvac.embed({
