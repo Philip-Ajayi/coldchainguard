@@ -9,7 +9,7 @@ import { initDatabase, db } from './db.js';
 import { SYNTHETIC_BENCHMARKS } from './seedData.js';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -227,7 +227,7 @@ app.post('/api/export-log', async (req: Request, res: Response) => {
   }
 });
 
-app.get('*', (_req: Request, res: Response) => {
+app.use((_req: Request, res: Response) => {
   const indexPath = path.resolve(CLIENT_DIST, 'index.html');
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
@@ -236,11 +236,10 @@ app.get('*', (_req: Request, res: Response) => {
   }
 });
 
-app.listen(PORT, () => {
+
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`=======================================================`);
   console.log(`  COLDCHAINGUARD: AIR-GAPPED DIAGNOSTIC ENGINE ACTIVE  `);
-  console.log(`  LOCAL PORT: http://localhost:${PORT}                 `);
-  console.log(`  OPERATIONAL STATUS: 100% OFFLINE (WHO PQS E003)      `);
-  console.log(`  MEMORY STRATEGY: FORK-ISOLATE-EXIT (4GB RAM CAP)     `);
+  console.log(`  LOCAL PORT: http://0.0.0.0:${PORT}                   `);
   console.log(`=======================================================`);
 });
