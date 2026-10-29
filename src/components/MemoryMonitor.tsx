@@ -44,7 +44,7 @@ export const MemoryMonitor: React.FC<MemoryMonitorProps> = ({ telemetry }) => {
           <div className="flex flex-wrap gap-2">
             {telemetry.recentWorkerRuns.slice(0, 3).map((w) => (
               <span key={w.id} className="bg-tactical-950 px-2 py-0.5 rounded border border-tactical-800 text-slate-300">
-                {w.worker_name}: <strong className="text-tactical-accent">{w.duration_ms}ms</strong> ({w.peak_memory_mb} MB) -> EXITED(0)
+                {w.worker_name}: <strong className="text-tactical-accent">{w.duration_ms}ms</strong> ({w.peak_memory_mb} MB) {"->"} EXITED(0)
               </span>
             ))}
           </div>
