@@ -41,7 +41,7 @@ async function runVectorRetrieval(query: RetrievalQuery) {
     const modelPath = path.resolve(process.cwd(), 'models', 'bge-small-en-v1.5-q8_0.gguf');
 
     const modelId = await qvac.loadModel({
-      modelType: 'embeddings',
+      modelType: 'llamacpp-embedding',
       modelSrc: modelPath,
       modelConfig: { threads: 2 }
     });

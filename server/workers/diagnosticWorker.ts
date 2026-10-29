@@ -291,6 +291,7 @@ Output pure JSON matching this exact structure:
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
       ],
+      stream: false,
       generationParams: {
         temp: 0.05
       }
