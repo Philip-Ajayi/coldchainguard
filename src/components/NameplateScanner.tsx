@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Camera, RefreshCw, CheckCircle2, Sliders } from 'lucide-react';
+import { Camera, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
 
 interface NameplateScannerProps {
   detectedModel: string;
@@ -14,27 +14,37 @@ export const NameplateScanner: React.FC<NameplateScannerProps> = ({
 }) => {
   const [scanning, setScanning] = useState(false);
   const [scanStatus, setScanStatus] = useState<string | null>(null);
+  const [scanError, setScanError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const simulateOpticalScan = async (base64Payload?: string) => {
+  const processImageBuffer = async (base64Payload: string) => {
     setScanning(true);
-    setScanStatus("Stage 1 OCR Worker Spawned (RAM Cap: 140MB)...");
+    setScanStatus("Analyzing nameplate with native GGML OCR worker...");
+    setScanError(null);
 
     try {
       const response = await fetch('/api/ocr', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64: base64Payload || "SIMULATED_PLATE_DATA" })
+        body: JSON.stringify({ imageBase64: base64Payload })
       });
+
       const data = await response.json();
 
-      if (data.detectedModel) {
-        onModelChange(data.detectedModel, data.electronicUnitCode);
-        setScanStatus(`Identified: ${data.detectedBrand} ${data.detectedModel} (${data.electronicUnitCode})`);
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP ${response.status}: Optical scan failed`);
       }
-    } catch {
-      onModelChange("BD35F", "101N0210");
-      setScanStatus("Secop BD35F 101N0210 (Direct Fallback Loaded)");
+
+      if (data.detectedModel && data.detectedModel !== 'Unidentified Model') {
+        onModelChange(data.detectedModel, data.electronicUnitCode);
+        setScanStatus(`Identified: ${data.detectedBrand} ${data.detectedModel} (${data.electronicUnitCode}) - Confidence: ${Math.round(data.confidenceScore * 100)}%`);
+      } else {
+        setScanError(`OCR Text Extracted ("${data.rawText.slice(0, 40)}..."), but could not match known compressor models. Please select manually.`);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setScanError(msg);
+      setScanStatus(null);
     } finally {
       setScanning(false);
     }
@@ -45,7 +55,9 @@ export const NameplateScanner: React.FC<NameplateScannerProps> = ({
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        simulateOpticalScan(reader.result?.toString().split(',')[1]);
+        const resultStr = reader.result?.toString() || '';
+        const base64 = resultStr.includes(',') ? resultStr.split(',')[1] : resultStr;
+        processImageBuffer(base64);
       };
       reader.readAsDataURL(file);
     }
@@ -64,6 +76,7 @@ export const NameplateScanner: React.FC<NameplateScannerProps> = ({
           <input
             type="file"
             accept="image/*"
+            capture="environment"
             ref={fileInputRef}
             onChange={handleFileUpload}
             className="hidden"
@@ -72,10 +85,10 @@ export const NameplateScanner: React.FC<NameplateScannerProps> = ({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={scanning}
-            className="bg-tactical-800 hover:bg-tactical-700 border border-tactical-700 text-xs text-slate-200 px-3 py-1 rounded flex items-center space-x-1.5 transition"
+            className="bg-tactical-800 hover:bg-tactical-700 disabled:opacity-50 border border-tactical-700 text-xs text-slate-200 px-3 py-1 rounded flex items-center space-x-1.5 transition"
           >
             {scanning ? <RefreshCw className="w-3.5 h-3.5 animate-spin text-tactical-accent" /> : <Camera className="w-3.5 h-3.5" />}
-            <span>{scanning ? "Extracting..." : "Scan Photo / Tag"}</span>
+            <span>{scanning ? "Extracting..." : "Capture Photo / File"}</span>
           </button>
         </div>
       </div>
@@ -113,9 +126,16 @@ export const NameplateScanner: React.FC<NameplateScannerProps> = ({
       </div>
 
       {scanStatus && (
-        <div className="mt-2 text-xs font-mono text-tactical-accent flex items-center space-x-1.5">
-          <Sliders className="w-3.5 h-3.5" />
+        <div className="mt-2 text-xs font-mono text-emerald-400 flex items-center space-x-1.5">
+          <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
           <span>{scanStatus}</span>
+        </div>
+      )}
+
+      {scanError && (
+        <div className="mt-2 text-xs font-mono text-red-400 flex items-start space-x-1.5 bg-red-950/40 p-2 rounded border border-red-900">
+          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+          <span>{scanError}</span>
         </div>
       )}
     </div>

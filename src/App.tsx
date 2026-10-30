@@ -5,7 +5,9 @@ import {
   Play,
   Database,
   Stethoscope,
-  Activity
+  Activity,
+  AlertTriangle,
+  XCircle
 } from 'lucide-react';
 import { BlinkSelector } from './components/BlinkSelector';
 import { MultimeterInput } from './components/MultimeterInput';
@@ -28,7 +30,9 @@ export const App: React.FC = () => {
 
   const [diagnosticPlan, setDiagnosticPlan] = useState<DiagnosticPlan | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const [apiError, setApiError] = useState<string | null>(null);
   const [telemetry, setTelemetry] = useState<SystemTelemetry | null>(null);
+  const [telemetryError, setTelemetryError] = useState<boolean>(false);
   const [benchmarks, setBenchmarks] = useState<SyntheticBenchmarkCase[]>([]);
 
   const [isLogModalOpen, setIsLogModalOpen] = useState<boolean>(false);
@@ -37,26 +41,13 @@ export const App: React.FC = () => {
   const fetchTelemetry = async () => {
     try {
       const res = await fetch('/api/system-telemetry');
-      if (res.ok) {
-        const data = await res.json();
-        setTelemetry(data);
-      }
+      if (!res.ok) throw new Error("Telemetry unreachable");
+      const data = await res.json();
+      setTelemetry(data);
+      setTelemetryError(false);
     } catch {
-      setTelemetry({
-        status: 'ONLINE',
-        mode: 'AIR_GAPPED_LOCAL_EDGE',
-        hostMemory: {
-          rssMb: 142,
-          heapTotalMb: 88,
-          heapUsedMb: 62,
-          externalMb: 18,
-          totalSystemUsedApproxMb: 2480,
-          systemCeilingMb: 4096
-        },
-        recentWorkerRuns: [
-          { id: 1, worker_name: 'diagnosticWorker.ts', peak_memory_mb: 280, duration_ms: 120, exit_code: 0, timestamp: new Date().toISOString() }
-        ]
-      });
+      setTelemetry(null);
+      setTelemetryError(true);
     }
   };
 
@@ -68,7 +59,7 @@ export const App: React.FC = () => {
         setBenchmarks(data.benchmarks);
       }
     } catch {
-      // Fallback loaded directly
+      // Benchmark list non-critical
     }
   };
 
@@ -81,58 +72,33 @@ export const App: React.FC = () => {
 
   const handleRunDiagnostic = async () => {
     setLoading(true);
+    setApiError(null);
+    setDiagnosticPlan(null);
+
     try {
       const response = await fetch('/api/diagnose', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           blinkCode: selectedBlink,
-          voltage: parseFloat(voltage) || 12.1,
-          resistance: parseFloat(resistance) || 2.1,
-          fanAmperage: parseFloat(fanAmperage) || 0.35,
-          ambientTemp: parseFloat(ambientTemp) || 34,
+          voltage: parseFloat(voltage),
+          resistance: resistance ? parseFloat(resistance) : undefined,
+          fanAmperage: fanAmperage ? parseFloat(fanAmperage) : undefined,
+          ambientTemp: ambientTemp ? parseFloat(ambientTemp) : undefined,
           compressorModel: detectedModel,
           electronicUnitCode: electronicUnit
         })
       });
 
-      if (!response.ok) throw new Error("Diagnosis failed");
       const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP ${response.status}: Diagnosis failed`);
+      }
+
       setDiagnosticPlan(data.diagnostic);
-    } catch {
-      setTimeout(() => {
-        setDiagnosticPlan({
-          status: selectedBlink === 3 ? 'CRITICAL_HARDWARE_REPLACEMENT' : 'FAULT_ISOLATED',
-          faultSummary: `Blink Code ${selectedBlink}: Field Diagnostic Sequence Generated`,
-          rootCause: selectedBlink === 3
-            ? "Motor rotor stalled or 3-phase winding resistance drift detected."
-            : `Controller fault code ${selectedBlink} isolated via WHO PQS specification.`,
-          severity: selectedBlink === 3 ? 'CRITICAL_SPOILAGE_RISK' : 'HIGH',
-          authorityCitation: "WHO PQS E003/SD01-1 Guidelines & Secop TB-101",
-          schematicFocusPins: selectedBlink === 1 ? ['+', '-', 'C'] : selectedBlink === 2 ? ['F', '+'] : ['1', '2', '3', 'P'],
-          recommendedSteps: [
-            {
-              stepNumber: 1,
-              instruction: "Disconnect main DC supply and unclip electronic unit.",
-              targetTerminals: ['+', '-'],
-              expectedValue: "0.0V DC (De-energized)",
-              failureCondition: "Residual voltage detected",
-              multimeterMode: 'DC_VOLTAGE'
-            },
-            {
-              stepNumber: 2,
-              instruction: "Measure compressor stator pins 1 to 2, 2 to 3, and 1 to 3.",
-              targetTerminals: ['Pins 1, 2, 3'],
-              expectedValue: "2.1 Ω ± 0.3 Ω balanced",
-              failureCondition: "Deviation > 0.5 Ω indicates internal short",
-              multimeterMode: 'RESISTANCE_OHMS'
-            }
-          ],
-          preventiveAction: "Verify PV input terminal torque and clean heatsink fins."
-        });
-        setLoading(false);
-      }, 500);
-      return;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setApiError(msg);
     } finally {
       setLoading(false);
       fetchTelemetry();
@@ -148,6 +114,7 @@ export const App: React.FC = () => {
     setDetectedModel(bm.compressorModel);
     setElectronicUnit(bm.electronicUnitCode);
     setDiagnosticPlan(null);
+    setApiError(null);
   };
 
   return (
@@ -162,7 +129,7 @@ export const App: React.FC = () => {
               <div className="flex items-center space-x-2">
                 <h1 className="text-base font-extrabold tracking-wider text-white">ColdChainGuard</h1>
                 <span className="text-[10px] font-mono bg-tactical-800 text-tactical-accent px-1.5 py-0.5 rounded border border-tactical-700 font-bold">
-                  v1.0.0-PROD
+                  LIVE-EDGE
                 </span>
               </div>
               <p className="text-[11px] font-mono text-slate-400">
@@ -178,12 +145,12 @@ export const App: React.FC = () => {
               className="flex items-center space-x-1.5 bg-tactical-950 hover:bg-tactical-800 px-2.5 py-1 rounded border border-tactical-700 font-mono text-xs text-tactical-cyan transition"
             >
               <Database className="w-3.5 h-3.5 text-tactical-cyan" />
-              <span>INSPECT SYNTHETIC BENCHMARKS</span>
+              <span>REFERENCE BENCHMARKS</span>
             </button>
 
-            <div className="hidden sm:flex items-center space-x-1.5 bg-tactical-950 px-2.5 py-1 rounded border border-tactical-700 font-mono text-xs text-emerald-400">
-              <WifiOff className="w-3.5 h-3.5 text-emerald-400" />
-              <span>AIR-GAPPED</span>
+            <div className={`hidden sm:flex items-center space-x-1.5 bg-tactical-950 px-2.5 py-1 rounded border font-mono text-xs ${telemetryError ? 'border-red-800 text-red-400' : 'border-tactical-700 text-emerald-400'}`}>
+              <WifiOff className="w-3.5 h-3.5" />
+              <span>{telemetryError ? 'SERVER OFFLINE' : 'AIR-GAPPED'}</span>
             </div>
 
             <div className="hidden sm:flex items-center space-x-1.5 bg-tactical-950 px-2.5 py-1 rounded border border-tactical-700 font-mono text-xs text-tactical-accent">
@@ -195,10 +162,29 @@ export const App: React.FC = () => {
       </header>
 
       <main className="max-w-7xl mx-auto w-full p-4 flex-grow space-y-4">
+        {apiError && (
+          <div className="bg-red-950/80 border border-red-700 p-3.5 rounded-lg text-xs font-mono text-red-200 flex items-start justify-between">
+            <div className="flex items-start space-x-2.5">
+              <XCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <strong className="block text-white font-bold">Diagnostic Inference Error:</strong>
+                <span>{apiError}</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setApiError(null)}
+              className="text-red-400 hover:text-white ml-2 text-sm font-bold"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         <div className="bg-tactical-900/60 border border-tactical-800 rounded-lg p-2.5 flex items-center justify-between flex-wrap gap-2 text-xs font-mono">
           <span className="text-slate-400 flex items-center space-x-1.5">
             <Activity className="w-3.5 h-3.5 text-tactical-accent" />
-            <span>QUICK FIELD SCENARIO BENCHMARKS:</span>
+            <span>LOAD GROUND-TRUTH TEST BENCH VALUES:</span>
           </span>
           <div className="flex items-center space-x-2">
             <button
@@ -208,10 +194,11 @@ export const App: React.FC = () => {
                 setVoltage("12.2");
                 setResistance("4.8");
                 setDiagnosticPlan(null);
+                setApiError(null);
               }}
               className="bg-tactical-800 hover:bg-tactical-700 border border-tactical-700 px-2.5 py-1 rounded text-red-400 transition"
             >
-              Case A: 3-Blink Rotor Burnout
+              Preset A: 3-Blink Rotor Burnout
             </button>
             <button
               type="button"
@@ -220,10 +207,11 @@ export const App: React.FC = () => {
                 setVoltage("10.1");
                 setResistance("2.1");
                 setDiagnosticPlan(null);
+                setApiError(null);
               }}
               className="bg-tactical-800 hover:bg-tactical-700 border border-tactical-700 px-2.5 py-1 rounded text-amber-400 transition"
             >
-              Case B: 1-Blink Solar Undervoltage
+              Preset B: 1-Blink Solar Sag
             </button>
             <button
               type="button"
@@ -232,17 +220,18 @@ export const App: React.FC = () => {
                 setVoltage("12.4");
                 setFanAmperage("0.72");
                 setDiagnosticPlan(null);
+                setApiError(null);
               }}
               className="bg-tactical-800 hover:bg-tactical-700 border border-tactical-700 px-2.5 py-1 rounded text-cyan-400 transition"
             >
-              Case C: 2-Blink Seized Fan
+              Preset C: 2-Blink Seized Fan
             </button>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           <div className="lg:col-span-8 space-y-4">
-            <BlinkSelector selectedBlink={selectedBlink} onSelectBlink={setSelectedBlink} />
+            <BlinkSelector selectedBlink={selectedBlink} onSelectBlink={(b) => { setSelectedBlink(b); setDiagnosticPlan(null); }} />
 
             <MultimeterInput
               voltage={voltage}
@@ -254,6 +243,7 @@ export const App: React.FC = () => {
                 if (f === 'resistance') setResistance(v);
                 if (f === 'fanAmperage') setFanAmperage(v);
                 if (f === 'ambientTemp') setAmbientTemp(v);
+                setDiagnosticPlan(null);
               }}
             />
           </div>
@@ -274,10 +264,10 @@ export const App: React.FC = () => {
               type="button"
               onClick={handleRunDiagnostic}
               disabled={loading}
-              className="w-full bg-tactical-accent hover:bg-amber-600 active:scale-[0.98] text-black font-extrabold text-sm py-3.5 px-4 rounded-lg shadow-xl flex items-center justify-center space-x-2 uppercase tracking-wider transition"
+              className="w-full bg-tactical-accent hover:bg-amber-600 disabled:opacity-50 active:scale-[0.98] text-black font-extrabold text-sm py-3.5 px-4 rounded-lg shadow-xl flex items-center justify-center space-x-2 uppercase tracking-wider transition"
             >
               <Play className="w-5 h-5 fill-current" />
-              <span>{loading ? "Synthesizing WHO Guidance..." : "Run Diagnostic Isolation"}</span>
+              <span>{loading ? "Running Local Inference..." : "Run Diagnostic Isolation"}</span>
             </button>
           </div>
         </div>
@@ -313,7 +303,7 @@ export const App: React.FC = () => {
 
       <footer className="bg-tactical-900 border-t border-tactical-800 text-[11px] font-mono text-slate-500 py-3 px-4">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>ColdChainGuard | World Health Organization PQS E003 Grounded Reference Model</span>
+          <span>ColdChainGuard | Live Execution Mode</span>
           <span className="text-emerald-500">Autonomous Edge Node: Zero External Requests Permitted</span>
         </div>
       </footer>

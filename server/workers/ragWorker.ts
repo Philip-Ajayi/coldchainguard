@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3';
 import path from 'path';
+import fs from 'fs';
 
 interface RetrievalQuery {
   blinkCode: number;
@@ -11,6 +12,7 @@ interface RetrievalQuery {
 const DB_PATH = path.resolve(process.cwd(), 'data', 'coldchainguard.db');
 
 function cosineSimilarity(vecA: number[], vecB: number[]): number {
+  if (vecA.length !== vecB.length || vecA.length === 0) return 0;
   let dotProduct = 0;
   let normA = 0;
   let normB = 0;
@@ -19,10 +21,20 @@ function cosineSimilarity(vecA: number[], vecB: number[]): number {
     normA += vecA[i] * vecA[i];
     normB += vecB[i] * vecB[i];
   }
-  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB) || 1);
+  const magnitude = Math.sqrt(normA) * Math.sqrt(normB);
+  return magnitude === 0 ? 0 : dotProduct / magnitude;
 }
 
 async function runVectorRetrieval(query: RetrievalQuery) {
+  if (!fs.existsSync(DB_PATH)) {
+    throw new Error(`Database file not found at ${DB_PATH}. Run initDatabase() first.`);
+  }
+
+  const modelPath = path.resolve(process.cwd(), 'models', 'bge-small-en-v1.5-q8_0.gguf');
+  if (!fs.existsSync(modelPath)) {
+    throw new Error(`Embedding model not found at ${modelPath}. Place 'bge-small-en-v1.5-q8_0.gguf' in the models/ directory.`);
+  }
+
   const db = new Database(DB_PATH, { readonly: true });
   const chunks = db.prepare('SELECT id, category, title, source, content, tags FROM who_manual_chunks').all() as Array<{
     id: string;
@@ -34,18 +46,21 @@ async function runVectorRetrieval(query: RetrievalQuery) {
   }>;
   db.close();
 
-  const queryPrompt = `Compressor fault code ${query.blinkCode} blinks, operating voltage ${query.voltage}V DC, compressor ${query.compressorModel}`;
+  if (chunks.length === 0) {
+    throw new Error("No reference WHO manual chunks found in the database.");
+  }
+
+  const queryPrompt = `Secop ${query.compressorModel} blink code ${query.blinkCode} flashes, voltage ${query.voltage}V DC${query.resistance ? `, winding resistance ${query.resistance} Ohms` : ''}`;
+
+  const qvac = await import('@qvac/sdk');
+
+  const modelId = await (qvac as any).loadModel({
+    modelType: 'embeddings',
+    modelSrc: modelPath,
+    modelConfig: { device: 'cpu' }
+  });
 
   try {
-    const qvac = await import('@qvac/sdk');
-    const modelPath = path.resolve(process.cwd(), 'models', 'bge-small-en-v1.5-q8_0.gguf');
-
-    const modelId = await (qvac as any).loadModel({
-      modelType: 'embeddings',
-      modelSrc: modelPath,
-      modelConfig: { device: 'cpu' }
-    });
-
     const { embedding: queryVector } = await qvac.embed({
       modelId,
       text: queryPrompt
@@ -62,23 +77,10 @@ async function runVectorRetrieval(query: RetrievalQuery) {
       })
     );
 
+    scored.sort((a, b) => b.score - a.score);
+    return scored.slice(0, 3).map((s) => s.chunk);
+  } finally {
     await qvac.unloadModel({ modelId });
-    scored.sort((a, b) => b.score - a.score);
-    return scored.slice(0, 3).map((s) => s.chunk);
-  } catch {
-    const targetTag = `blink-${query.blinkCode}`;
-    const scored = chunks.map((chunk) => {
-      let score = 0;
-      const parsedTags: string[] = JSON.parse(chunk.tags);
-      if (parsedTags.includes(targetTag)) score += 10.0;
-      if (chunk.content.toLowerCase().includes(query.compressorModel.toLowerCase())) score += 3.0;
-      if (query.voltage < 10.5 && parsedTags.includes('voltage')) score += 5.0;
-      if (query.resistance !== undefined && parsedTags.includes('resistance')) score += 4.0;
-      return { chunk, score };
-    });
-
-    scored.sort((a, b) => b.score - a.score);
-    return scored.slice(0, 3).map((s) => s.chunk);
   }
 }
 
