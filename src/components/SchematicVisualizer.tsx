@@ -6,122 +6,223 @@ interface SchematicVisualizerProps {
   blinkCode: number;
 }
 
-export const SchematicVisualizer: React.FC<SchematicVisualizerProps> = ({ activePins, blinkCode }) => {
-  const isPinActive = (pinName: string) => activePins.includes(pinName);
+export const SchematicVisualizer: React.FC<SchematicVisualizerProps> = ({
+  activePins,
+  blinkCode,
+}) => {
+  const isPinActive = (pinName: string) =>
+    activePins.includes(pinName);
 
   return (
-    <div className="bg-tactical-900 border border-tactical-700/60 rounded-lg p-4 shadow-xl">
-      <div className="flex items-center justify-between mb-3 border-b border-tactical-700/50 pb-2">
-        <div className="flex items-center space-x-2">
-          <Cpu className="w-5 h-5 text-tactical-accent" />
-          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-200">
-            Secop 101N0210 Terminal Pinout & Multimeter Test Probes
-          </h2>
+    <section className="section-card">
+      <div className="section-heading">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#26344a] flex items-center justify-center text-amber-400">
+            <Cpu size={20} />
+          </div>
+
+          <div>
+            <h2 className="section-title">Controller connection diagram</h2>
+            <p className="section-description">
+              Terminal locations and the points used in this test.
+            </p>
+          </div>
         </div>
-        <div className="flex items-center space-x-1 text-xs font-mono text-slate-400">
-          <Target className="w-3.5 h-3.5 text-tactical-accent" />
-          <span>Active Test Points: {activePins.join(', ') || 'None'}</span>
+
+        <div className="status-pill">
+          <Target size={14} className="text-amber-400" />
+          <span>{activePins.length} active test points</span>
         </div>
       </div>
 
-      <div className="w-full overflow-x-auto">
+      <div className="schematic-wrap">
         <svg
           viewBox="0 0 760 260"
-          className="w-full h-auto max-h-56 bg-tactical-950 rounded border border-tactical-800"
+          className="schematic-svg"
+          role="img"
+          aria-label="Secop electronic controller terminal diagram"
         >
           <defs>
-            <linearGradient id="controllerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#161c28" />
-              <stop offset="100%" stopColor="#0d1117" />
+            <linearGradient
+              id="controllerGrad"
+              x1="0%"
+              y1="0%"
+              x2="100%"
+              y2="100%"
+            >
+              <stop offset="0%" stopColor="#172538" />
+              <stop offset="100%" stopColor="#0d1624" />
             </linearGradient>
-            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="3" result="glow" />
-              <feComposite in="SourceGraphic" in2="glow" operator="over" />
+
+            <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
             </filter>
           </defs>
 
-          <rect x="20" y="20" width="720" height="220" rx="8" fill="url(#controllerGrad)" stroke="#2a364d" strokeWidth="2" />
-          <text x="40" y="45" fill="#94a3b8" fontFamily="monospace" fontSize="12" fontWeight="bold">
-            SECOP / DANFOSS BD35F ELECTRONIC UNIT (101N0210)
-          </text>
-          <text x="560" y="45" fill="#e69b00" fontFamily="monospace" fontSize="11">
-            WHO PQS E003 CLASS A
+          <rect
+            x="20"
+            y="20"
+            width="720"
+            height="220"
+            rx="12"
+            fill="url(#controllerGrad)"
+            stroke="#35465d"
+            strokeWidth="1.5"
+          />
+
+          <text
+            x="40"
+            y="45"
+            fill="#b3c0d1"
+            fontFamily="monospace"
+            fontSize="11"
+            fontWeight="bold"
+          >
+            SECOP / DANFOSS BD35F ELECTRONIC UNIT
           </text>
 
-          <g transform="translate(60, 70)">
-            <rect x="0" y="0" width="130" height="130" rx="6" fill="#111620" stroke="#334155" strokeWidth="1.5" />
-            <text x="12" y="22" fill="#64748b" fontFamily="monospace" fontSize="10" fontWeight="bold">
-              MOTOR FEEDTHROUGH
+          <text
+            x="40"
+            y="61"
+            fill="#718198"
+            fontFamily="monospace"
+            fontSize="9"
+          >
+            CONTROLLER 101N0210
+          </text>
+
+          <text
+            x="610"
+            y="45"
+            fill="#e8b54e"
+            fontFamily="monospace"
+            fontSize="10"
+          >
+            WHO PQS E003
+          </text>
+
+          <g transform="translate(60, 78)">
+            <rect
+              x="0"
+              y="0"
+              width="130"
+              height="130"
+              rx="9"
+              fill="#0a1421"
+              stroke="#35465d"
+              strokeWidth="1.5"
+            />
+
+            <text
+              x="65"
+              y="19"
+              textAnchor="middle"
+              fill="#8293a9"
+              fontFamily="monospace"
+              fontSize="9"
+            >
+              MOTOR OUTPUT
             </text>
 
-            <circle
-              cx="65"
-              cy="48"
-              r="9"
-              fill={blinkCode === 3 ? "#ef4444" : "#1e293b"}
-              stroke="#e69b00"
-              strokeWidth="2"
-              filter={blinkCode === 3 ? "url(#glow)" : undefined}
-            />
-            <text x="61" y="52" fill="#ffffff" fontFamily="monospace" fontSize="9" fontWeight="bold">1</text>
+            {[
+              { x: 65, y: 49, label: '1' },
+              { x: 40, y: 96, label: '2' },
+              { x: 90, y: 96, label: '3' },
+            ].map((pin) => (
+              <g key={pin.label}>
+                <circle
+                  cx={pin.x}
+                  cy={pin.y}
+                  r="10"
+                  fill={blinkCode === 3 ? '#8e343d' : '#23364c'}
+                  stroke="#e8b54e"
+                  strokeWidth="1.8"
+                  filter={blinkCode === 3 ? 'url(#glow)' : undefined}
+                />
 
-            <circle
-              cx="40"
-              cy="95"
-              r="9"
-              fill={blinkCode === 3 ? "#ef4444" : "#1e293b"}
-              stroke="#e69b00"
-              strokeWidth="2"
-              filter={blinkCode === 3 ? "url(#glow)" : undefined}
-            />
-            <text x="36" y="99" fill="#ffffff" fontFamily="monospace" fontSize="9" fontWeight="bold">2</text>
+                <text
+                  x={pin.x}
+                  y={pin.y + 3}
+                  textAnchor="middle"
+                  fill="#fff"
+                  fontFamily="monospace"
+                  fontSize="9"
+                  fontWeight="bold"
+                >
+                  {pin.label}
+                </text>
+              </g>
+            ))}
 
-            <circle
-              cx="90"
-              cy="95"
-              r="9"
-              fill={blinkCode === 3 ? "#ef4444" : "#1e293b"}
-              stroke="#e69b00"
-              strokeWidth="2"
-              filter={blinkCode === 3 ? "url(#glow)" : undefined}
-            />
-            <text x="86" y="99" fill="#ffffff" fontFamily="monospace" fontSize="9" fontWeight="bold">3</text>
-            <text x="25" y="122" fill="#94a3b8" fontFamily="monospace" fontSize="9">Phase = 2.1Ω</text>
+            <text
+              x="65"
+              y="120"
+              textAnchor="middle"
+              fill="#8293a9"
+              fontFamily="monospace"
+              fontSize="9"
+            >
+              MOTOR TERMINALS
+            </text>
           </g>
 
           {[
-            { id: '+', x: 230, label: '+', desc: 'Battery DC Pos (12V)' },
-            { id: '-', x: 300, label: '-', desc: 'Battery DC Neg' },
-            { id: 'F', x: 370, label: 'F', desc: 'Condenser Fan (Max 0.5A)' },
-            { id: 'D', x: 440, label: 'D', desc: 'LED Diagnostic Out' },
-            { id: 'C', x: 510, label: 'C', desc: 'Speed / Cutout Resistor' },
-            { id: 'P', x: 580, label: 'P', desc: 'Solar PTC Switch' },
-            { id: 'T', x: 650, label: 'T', desc: 'Thermostat Contact' },
+            { id: '+', x: 230, label: '+', desc: 'Battery positive' },
+            { id: '-', x: 300, label: '−', desc: 'Battery negative' },
+            { id: 'F', x: 370, label: 'F', desc: 'Fan output' },
+            { id: 'D', x: 440, label: 'D', desc: 'LED diagnostics' },
+            { id: 'C', x: 510, label: 'C', desc: 'Speed control' },
+            { id: 'P', x: 580, label: 'P', desc: 'Solar switch' },
+            { id: 'T', x: 650, label: 'T', desc: 'Thermostat' },
           ].map((term) => {
             const active = isPinActive(term.id);
+
             return (
-              <g key={term.id} transform={`translate(${term.x}, 70)`}>
+              <g
+                key={term.id}
+                transform={`translate(${term.x}, 80)`}
+              >
                 <rect
                   x="0"
                   y="0"
-                  width="55"
-                  height="115"
-                  rx="4"
-                  fill={active ? '#2e1c0c' : '#111620'}
-                  stroke={active ? '#e69b00' : '#334155'}
-                  strokeWidth={active ? 2.5 : 1}
+                  width="54"
+                  height="116"
+                  rx="7"
+                  fill={active ? '#3a301c' : '#111d2d'}
+                  stroke={active ? '#e8b54e' : '#35465d'}
+                  strokeWidth={active ? 2 : 1}
                   filter={active ? 'url(#glow)' : undefined}
                 />
-                <circle cx="27.5" cy="25" r="10" fill="#334155" stroke="#64748b" strokeWidth="1" />
-                <line x1="22" y1="25" x2="33" y2="25" stroke="#94a3b8" strokeWidth="2" />
+
+                <circle
+                  cx="27"
+                  cy="23"
+                  r="10"
+                  fill="#34455c"
+                  stroke="#8293a9"
+                  strokeWidth="1"
+                />
+
+                <line
+                  x1="21"
+                  y1="23"
+                  x2="33"
+                  y2="23"
+                  stroke="#d0dae6"
+                  strokeWidth="2"
+                />
 
                 <text
-                  x="27.5"
-                  y="62"
+                  x="27"
+                  y="63"
                   textAnchor="middle"
-                  fill={active ? '#e69b00' : '#ffffff'}
+                  fill={active ? '#ffd477' : '#e2e8f0'}
                   fontFamily="monospace"
-                  fontSize="16"
+                  fontSize="17"
                   fontWeight="bold"
                 >
                   {term.label}
@@ -129,25 +230,33 @@ export const SchematicVisualizer: React.FC<SchematicVisualizerProps> = ({ active
 
                 <rect
                   x="5"
-                  y="78"
-                  width="45"
-                  height="16"
-                  rx="2"
-                  fill={active ? '#e69b00' : '#1e293b'}
+                  y="77"
+                  width="44"
+                  height="17"
+                  rx="4"
+                  fill={active ? '#e8b54e' : '#22334a'}
                 />
+
                 <text
-                  x="27.5"
-                  y="90"
+                  x="27"
+                  y="89"
                   textAnchor="middle"
-                  fill={active ? '#0a0d12' : '#64748b'}
+                  fill={active ? '#15130e' : '#91a0b5'}
                   fontFamily="monospace"
                   fontSize="8"
                   fontWeight="bold"
                 >
-                  {active ? 'PROBE' : 'OFF'}
+                  {active ? 'ACTIVE' : 'READY'}
                 </text>
 
-                <text x="27.5" y="132" textAnchor="middle" fill="#64748b" fontFamily="monospace" fontSize="8">
+                <text
+                  x="27"
+                  y="108"
+                  textAnchor="middle"
+                  fill="#8293a9"
+                  fontFamily="monospace"
+                  fontSize="8"
+                >
                   {term.id}
                 </text>
               </g>
@@ -155,6 +264,24 @@ export const SchematicVisualizer: React.FC<SchematicVisualizerProps> = ({ active
           })}
         </svg>
       </div>
-    </div>
+
+      <div className="flex items-center justify-between flex-wrap gap-3 mt-4">
+        <div className="flex items-center gap-5 text-[11px] text-slate-400">
+          <span className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-sm bg-[#e8b54e]" />
+            Active test point
+          </span>
+
+          <span className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-sm bg-[#34455c]" />
+            Other terminal
+          </span>
+        </div>
+
+        <span className="text-[11px] text-slate-500 mono">
+          {activePins.join(' · ') || 'No active points'}
+        </span>
+      </div>
+    </section>
   );
 };

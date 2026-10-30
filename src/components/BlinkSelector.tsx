@@ -7,14 +7,42 @@ interface BlinkSelectorProps {
 }
 
 const BLINK_DEFINITIONS = [
-  { code: 1, label: "1 BLINK", title: "Battery Cut-out", desc: "DC terminal voltage below 10.4V or high line resistance" },
-  { code: 2, label: "2 BLINKS", title: "Fan Overcurrent", desc: "Condenser fan drawing > 0.5A on Terminal [F]" },
-  { code: 3, label: "3 BLINKS", title: "Motor Start Fail", desc: "Rotor lock or differential pressure > 5.0 bar" },
-  { code: 4, label: "4 BLINKS", title: "Minimum Speed", desc: "Compressor velocity dropped below 1,850 RPM" },
-  { code: 5, label: "5 BLINKS", title: "Thermal Overheat", desc: "Inverter heatsink temperature exceeded 85°C" },
+  {
+    code: 1,
+    label: '01',
+    title: 'Battery cut-out',
+    desc: 'Low battery voltage or excessive cable resistance.',
+  },
+  {
+    code: 2,
+    label: '02',
+    title: 'Fan overload',
+    desc: 'The condenser fan is drawing too much current.',
+  },
+  {
+    code: 3,
+    label: '03',
+    title: 'Motor failed to start',
+    desc: 'Possible locked rotor or high pressure difference.',
+  },
+  {
+    code: 4,
+    label: '04',
+    title: 'Low compressor speed',
+    desc: 'Compressor speed has fallen below its required level.',
+  },
+  {
+    code: 5,
+    label: '05',
+    title: 'Overheating',
+    desc: 'The electronic unit has exceeded its temperature limit.',
+  },
 ];
 
-export const BlinkSelector: React.FC<BlinkSelectorProps> = ({ selectedBlink, onSelectBlink }) => {
+export const BlinkSelector: React.FC<BlinkSelectorProps> = ({
+  selectedBlink,
+  onSelectBlink,
+}) => {
   const [ledLit, setLedLit] = useState(false);
 
   useEffect(() => {
@@ -25,6 +53,7 @@ export const BlinkSelector: React.FC<BlinkSelectorProps> = ({ selectedBlink, onS
       if (isPause) {
         setLedLit(false);
         blinkCounter++;
+
         if (blinkCounter >= 8) {
           isPause = false;
           blinkCounter = 0;
@@ -32,6 +61,7 @@ export const BlinkSelector: React.FC<BlinkSelectorProps> = ({ selectedBlink, onS
       } else {
         setLedLit(prev => !prev);
         blinkCounter++;
+
         if (blinkCounter >= selectedBlink * 2) {
           setLedLit(false);
           isPause = true;
@@ -44,59 +74,87 @@ export const BlinkSelector: React.FC<BlinkSelectorProps> = ({ selectedBlink, onS
   }, [selectedBlink]);
 
   return (
-    <div className="bg-tactical-900 border border-tactical-700/60 rounded-lg p-4 shadow-xl">
-      <div className="flex items-center justify-between mb-3 border-b border-tactical-700/50 pb-2">
-        <div className="flex items-center space-x-2">
-          <Zap className="w-5 h-5 text-tactical-accent" />
-          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-200">
-            Diagnostic LED Pulse Rhythm
-          </h2>
+    <section className="section-card">
+      <div className="section-heading">
+        <div className="flex items-center gap-3">
+          <div className="brand-mark !w-10 !h-10 !rounded-xl">
+            <Zap size={19} />
+          </div>
+
+          <div>
+            <h2 className="section-title">What is the LED showing?</h2>
+            <p className="section-description">
+              Select the number of flashes on the controller.
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center space-x-2 bg-tactical-950 px-3 py-1 rounded border border-tactical-700">
-          <span className="text-[11px] font-mono text-slate-400">PULSE:</span>
-          <div className="relative flex items-center justify-center">
-            <div className={`w-3.5 h-3.5 rounded-full transition-all duration-100 ${ledLit
-                ? 'bg-red-500 shadow-[0_0_12px_#ef4444]'
-                : 'bg-red-950/60 border border-red-900'
-              }`} />
+        <div className="flex items-center gap-3 bg-[#0c1421] border border-white/10 rounded-xl px-3 py-2">
+          <div
+            className={`w-3 h-3 rounded-full ${
+              ledLit
+                ? 'bg-red-500 shadow-[0_0_15px_#ef4444]'
+                : 'bg-red-950 border border-red-800'
+            }`}
+          />
+
+          <div>
+            <p className="text-[9px] text-slate-500 uppercase tracking-wider">
+              Controller LED
+            </p>
+            <p className="text-xs font-semibold text-slate-200">
+              {ledLit ? 'Flashing' : 'Waiting'}
+            </p>
           </div>
-          <span className="text-xs font-mono font-bold text-red-400 w-12 text-center">
-            {ledLit ? 'FLASH' : 'IDLE'}
-          </span>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
+      <div className="blink-grid">
         {BLINK_DEFINITIONS.map((def) => {
           const isSelected = selectedBlink === def.code;
+
           return (
             <button
               key={def.code}
               type="button"
               onClick={() => onSelectBlink(def.code)}
-              className={`flex flex-col text-left p-2.5 rounded-md border transition-all duration-150 ${isSelected
-                  ? 'bg-tactical-800 border-tactical-accent shadow-[0_0_8px_rgba(230,155,0,0.25)]'
-                  : 'bg-tactical-950/70 border-tactical-700/50 hover:border-slate-500 text-slate-400'
-                }`}
+              aria-pressed={isSelected}
+              className={`blink-option ${
+                isSelected ? 'active' : ''
+              }`}
             >
-              <div className="flex items-center justify-between w-full mb-1">
-                <span className={`text-xs font-mono font-extrabold px-1.5 py-0.5 rounded ${isSelected ? 'bg-tactical-accent text-tactical-950' : 'bg-tactical-800 text-slate-300'
-                  }`}>
-                  {def.label}
+              <div className="flex items-center justify-between">
+                <span className="blink-number">
+                  {def.label} / {def.code} {def.code === 1 ? 'flash' : 'flashes'}
                 </span>
-                {isSelected && <AlertCircle className="w-3.5 h-3.5 text-tactical-accent" />}
+
+                {isSelected ? (
+                  <AlertCircle
+                    size={16}
+                    className="text-amber-400"
+                  />
+                ) : (
+                  <span className="blink-indicator" />
+                )}
               </div>
-              <span className={`text-xs font-semibold leading-tight ${isSelected ? 'text-white' : 'text-slate-300'}`}>
+
+              <span className="blink-title">
                 {def.title}
               </span>
-              <span className="text-[10px] text-slate-400 mt-1 line-clamp-2 leading-tight">
+
+              <span className="blink-description">
                 {def.desc}
               </span>
+
+              {isSelected && (
+                <div className="mt-4 pt-3 border-t border-amber-400/20 text-[10px] font-semibold text-amber-400">
+                  SELECTED FAULT
+                </div>
+              )}
             </button>
           );
         })}
       </div>
-    </div>
+    </section>
   );
 };

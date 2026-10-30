@@ -1,5 +1,12 @@
 import React, { useRef, useState } from 'react';
-import { Camera, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
+import {
+  Camera,
+  RefreshCw,
+  CheckCircle2,
+  AlertCircle,
+  ScanLine,
+  Cpu,
+} from 'lucide-react';
 
 interface NameplateScannerProps {
   detectedModel: string;
@@ -19,27 +26,40 @@ export const NameplateScanner: React.FC<NameplateScannerProps> = ({
 
   const processImageBuffer = async (base64Payload: string) => {
     setScanning(true);
-    setScanStatus("Analyzing nameplate with native GGML OCR worker...");
+    setScanStatus('Reading the equipment label...');
     setScanError(null);
 
     try {
       const response = await fetch('/api/ocr', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64: base64Payload })
+        body: JSON.stringify({ imageBase64: base64Payload }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || `HTTP ${response.status}: Optical scan failed`);
+        throw new Error(
+          data.error || `HTTP ${response.status}: Optical scan failed`
+        );
       }
 
-      if (data.detectedModel && data.detectedModel !== 'Unidentified Model') {
-        onModelChange(data.detectedModel, data.electronicUnitCode);
-        setScanStatus(`Identified: ${data.detectedBrand} ${data.detectedModel} (${data.electronicUnitCode}) - Confidence: ${Math.round(data.confidenceScore * 100)}%`);
+      if (
+        data.detectedModel &&
+        data.detectedModel !== 'Unidentified Model'
+      ) {
+        onModelChange(
+          data.detectedModel,
+          data.electronicUnitCode
+        );
+
+        setScanStatus(
+          `Found ${data.detectedBrand} ${data.detectedModel} (${data.electronicUnitCode}) · ${Math.round(data.confidenceScore * 100)}% confidence`
+        );
       } else {
-        setScanError(`OCR Text Extracted ("${data.rawText.slice(0, 40)}..."), but could not match known compressor models. Please select manually.`);
+        setScanError(
+          `We couldn't match this label to a known compressor. Please select the model manually.`
+        );
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -50,29 +70,61 @@ export const NameplateScanner: React.FC<NameplateScannerProps> = ({
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = e.target.files?.[0];
+
     if (file) {
       const reader = new FileReader();
+
       reader.onloadend = () => {
         const resultStr = reader.result?.toString() || '';
-        const base64 = resultStr.includes(',') ? resultStr.split(',')[1] : resultStr;
+        const base64 = resultStr.includes(',')
+          ? resultStr.split(',')[1]
+          : resultStr;
+
         processImageBuffer(base64);
       };
+
       reader.readAsDataURL(file);
     }
   };
 
   return (
-    <div className="bg-tactical-900 border border-tactical-700/60 rounded-lg p-4 shadow-xl">
-      <div className="flex items-center justify-between mb-3 border-b border-tactical-700/50 pb-2">
-        <div className="flex items-center space-x-2">
-          <Camera className="w-5 h-5 text-emerald-400" />
-          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-200">
-            Compressor Nameplate OCR
-          </h2>
+    <section className="section-card">
+      <div className="section-heading">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#173b43] flex items-center justify-center text-[#42c9ad]">
+            <ScanLine size={20} />
+          </div>
+
+          <div>
+            <h2 className="section-title">Equipment details</h2>
+            <p className="section-description">
+              Identify the refrigerator and its controller.
+            </p>
+          </div>
         </div>
-        <div className="flex items-center space-x-2">
+      </div>
+
+      <div className="mb-4 p-4 rounded-xl bg-[#0c1421] border border-white/10">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-[#1c2b3e] flex items-center justify-center text-slate-300">
+              <Cpu size={19} />
+            </div>
+
+            <div>
+              <p className="text-[10px] text-slate-500 uppercase tracking-wider">
+                Current compressor
+              </p>
+              <p className="text-sm font-bold text-white mt-1">
+                {detectedModel}
+              </p>
+            </div>
+          </div>
+
           <input
             type="file"
             accept="image/*"
@@ -81,63 +133,102 @@ export const NameplateScanner: React.FC<NameplateScannerProps> = ({
             onChange={handleFileUpload}
             className="hidden"
           />
+
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={scanning}
-            className="bg-tactical-800 hover:bg-tactical-700 disabled:opacity-50 border border-tactical-700 text-xs text-slate-200 px-3 py-1 rounded flex items-center space-x-1.5 transition"
+            className="btn-secondary !px-3 !py-2"
           >
-            {scanning ? <RefreshCw className="w-3.5 h-3.5 animate-spin text-tactical-accent" /> : <Camera className="w-3.5 h-3.5" />}
-            <span>{scanning ? "Extracting..." : "Capture Photo / File"}</span>
+            {scanning ? (
+              <RefreshCw
+                size={15}
+                className="animate-spin text-amber-400"
+              />
+            ) : (
+              <Camera size={15} />
+            )}
+
+            <span>
+              {scanning ? 'Reading...' : 'Scan label'}
+            </span>
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div className="bg-tactical-950 p-2.5 rounded border border-tactical-700">
-          <span className="text-[11px] font-mono text-slate-400 block mb-1">COMPRESSOR SERIES</span>
-          <div className="flex items-center space-x-2">
-            <select
-              value={detectedModel}
-              onChange={(e) => onModelChange(e.target.value, electronicUnit)}
-              className="w-full bg-tactical-900 border border-tactical-700 rounded px-2.5 py-1.5 font-mono text-sm text-white focus:outline-none"
-            >
-              <option value="BD35F">Secop / Danfoss BD35F (Standard SDD)</option>
-              <option value="BD50F">Secop / Danfoss BD50F (High Capacity)</option>
-              <option value="TCW40">B Medical Systems TCW 40 SDD</option>
-              <option value="TCX200">Dometic TCX 200 Solar Direct</option>
-            </select>
-          </div>
+      <div className="space-y-4">
+        <div>
+          <label className="field-label" htmlFor="compressor-model">
+            Compressor model
+          </label>
+
+          <select
+            id="compressor-model"
+            value={detectedModel}
+            onChange={(e) =>
+              onModelChange(e.target.value, electronicUnit)
+            }
+            className="field-select"
+          >
+            <option value="BD35F">
+              Secop / Danfoss BD35F
+            </option>
+            <option value="BD50F">
+              Secop / Danfoss BD50F
+            </option>
+            <option value="TCW40">
+              B Medical Systems TCW 40 SDD
+            </option>
+            <option value="TCX200">
+              Dometic TCX 200 Solar Direct
+            </option>
+          </select>
         </div>
 
-        <div className="bg-tactical-950 p-2.5 rounded border border-tactical-700">
-          <span className="text-[11px] font-mono text-slate-400 block mb-1">ELECTRONIC UNIT CODE</span>
-          <div className="flex items-center space-x-2">
+        <div>
+          <label className="field-label" htmlFor="electronic-unit">
+            Electronic controller
+          </label>
+
+          <div className="relative">
             <input
+              id="electronic-unit"
               type="text"
               value={electronicUnit}
-              onChange={(e) => onModelChange(detectedModel, e.target.value)}
-              className="w-full bg-tactical-900 border border-tactical-700 rounded px-2.5 py-1.5 font-mono text-sm text-white focus:outline-none"
+              onChange={(e) =>
+                onModelChange(detectedModel, e.target.value)
+              }
+              className="field-input mono !pr-11"
               placeholder="101N0210"
             />
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+
+            <CheckCircle2
+              size={17}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#42c9ad]"
+            />
           </div>
         </div>
       </div>
 
       {scanStatus && (
-        <div className="mt-2 text-xs font-mono text-emerald-400 flex items-center space-x-1.5">
-          <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+        <div className="scanner-status mt-4">
+          <CheckCircle2
+            size={16}
+            className="flex-shrink-0 mt-0.5"
+          />
           <span>{scanStatus}</span>
         </div>
       )}
 
       {scanError && (
-        <div className="mt-2 text-xs font-mono text-red-400 flex items-start space-x-1.5 bg-red-950/40 p-2 rounded border border-red-900">
-          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+        <div className="scanner-status scanner-error mt-4">
+          <AlertCircle
+            size={16}
+            className="flex-shrink-0 mt-0.5"
+          />
           <span>{scanError}</span>
         </div>
       )}
-    </div>
+    </section>
   );
 };

@@ -1,5 +1,14 @@
 import React from 'react';
-import { CheckSquare, AlertTriangle, BookOpen, Wrench, ShieldCheck, Flame } from 'lucide-react';
+import {
+  CheckSquare,
+  AlertTriangle,
+  BookOpen,
+  Wrench,
+  ShieldCheck,
+  Flame,
+  Download,
+  CheckCircle2,
+} from 'lucide-react';
 import { DiagnosticPlan } from '../types';
 
 interface DiagnosticReportProps {
@@ -15,103 +24,216 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
 }) => {
   if (loading) {
     return (
-      <div className="bg-tactical-900 border border-tactical-700/60 rounded-lg p-8 shadow-xl text-center">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-tactical-accent border-r-transparent mb-3" />
-        <h3 className="text-sm font-mono font-bold text-slate-200 uppercase">
-          Executing Process-Isolated Diagnostic Synthesis...
-        </h3>
-        <p className="text-xs text-slate-400 mt-1">
-          Stage 2 Vector Search & Stage 3 Grounded Engine active. Hard 512MB RAM cap.
-        </p>
-      </div>
+      <section className="section-card py-16">
+        <div className="flex flex-col items-center text-center">
+          <div className="loading-ring mb-5" />
+
+          <h3 className="text-base font-bold text-white">
+            Checking the readings
+          </h3>
+
+          <p className="text-sm text-slate-400 mt-2 max-w-md leading-relaxed">
+            ColdChainGuard is comparing the measurements with its
+            diagnostic references and preparing a test plan.
+          </p>
+
+          <div className="flex items-center gap-2 mt-5 text-[11px] text-[#42c9ad]">
+            <span className="status-dot" />
+            Local diagnostic engine running
+          </div>
+        </div>
+      </section>
     );
   }
 
   if (!plan) {
     return (
-      <div className="bg-tactical-900 border border-tactical-700/60 rounded-lg p-8 shadow-xl text-center text-slate-400">
-        Select blink code, check multimeter values, and click "Run Diagnostic Isolation" to generate grounded WHO testing sequence.
-      </div>
+      <section className="section-card">
+        <div className="max-w-lg mx-auto py-10 text-center">
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-[#1a293d] flex items-center justify-center text-slate-400 mb-5">
+            <Wrench size={25} />
+          </div>
+
+          <h3 className="text-lg font-bold text-white">
+            Your diagnostic report will appear here
+          </h3>
+
+          <p className="text-sm text-slate-400 mt-2 leading-relaxed">
+            Select the fault code, enter your meter readings and
+            identify the equipment. Then run the diagnosis to get
+            a step-by-step testing guide.
+          </p>
+        </div>
+      </section>
     );
   }
 
   const isCritical = plan.severity === 'CRITICAL_SPOILAGE_RISK';
 
   return (
-    <div className="bg-tactical-900 border border-tactical-700/60 rounded-lg p-5 shadow-xl space-y-4">
-      <div className={`p-3.5 rounded border flex items-start justify-between ${isCritical
-          ? 'bg-red-950/40 border-red-800 text-red-200'
-          : 'bg-amber-950/40 border-amber-800 text-amber-200'
-        }`}>
-        <div className="flex items-start space-x-3">
-          {isCritical ? <Flame className="w-6 h-6 text-red-400 flex-shrink-0 mt-0.5" /> : <AlertTriangle className="w-6 h-6 text-amber-400 flex-shrink-0 mt-0.5" />}
-          <div>
-            <div className="flex items-center space-x-2">
-              <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-extrabold ${isCritical ? 'bg-red-600 text-white' : 'bg-amber-500 text-black'
-                }`}>
-                {plan.status}
-              </span>
-              <span className="text-[11px] font-mono text-slate-400">SEVERITY: {plan.severity}</span>
-            </div>
-            <h3 className="text-base font-bold text-white mt-1">{plan.faultSummary}</h3>
-            <p className="text-xs text-slate-300 mt-1 leading-relaxed">{plan.rootCause}</p>
+    <section className="section-card space-y-6">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <div className="flex items-center gap-2">
+            <CheckCircle2 size={17} className="text-[#42c9ad]" />
+            <span className="text-xs font-semibold text-[#42c9ad]">
+              Diagnostic report ready
+            </span>
           </div>
+
+          <h2 className="text-xl font-bold text-white mt-2 tracking-tight">
+            Findings and next steps
+          </h2>
+
+          <p className="text-xs text-slate-400 mt-1">
+            Review the likely cause and follow the recommended checks.
+          </p>
         </div>
 
         <button
           type="button"
           onClick={onOpenLogModal}
-          className="bg-tactical-800 hover:bg-tactical-700 border border-tactical-700 text-slate-200 text-xs px-3 py-1.5 rounded flex items-center space-x-1.5 flex-shrink-0 transition"
+          className="btn-secondary"
         >
-          <ShieldCheck className="w-4 h-4 text-emerald-400" />
-          <span>Export Service Log</span>
+          <Download size={15} />
+          <span>Save service record</span>
         </button>
       </div>
 
-      <div className="flex items-center space-x-2 text-xs font-mono bg-tactical-950 p-2.5 rounded border border-tactical-800 text-slate-300">
-        <BookOpen className="w-4 h-4 text-tactical-cyan flex-shrink-0" />
-        <span className="text-slate-400">Grounded Citation:</span>
-        <span className="font-semibold text-tactical-cyan">{plan.authorityCitation}</span>
+      <div
+        className={`report-header ${
+          isCritical ? 'report-critical' : 'report-warning'
+        }`}
+      >
+        <div className="flex items-start gap-4">
+          <div
+            className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${
+              isCritical
+                ? 'bg-red-500/15 text-red-400'
+                : 'bg-amber-400/15 text-amber-400'
+            }`}
+          >
+            {isCritical ? (
+              <Flame size={22} />
+            ) : (
+              <AlertTriangle size={22} />
+            )}
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span
+                className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md ${
+                  isCritical
+                    ? 'bg-red-500 text-white'
+                    : 'bg-amber-400 text-[#211808]'
+                }`}
+              >
+                {plan.status}
+              </span>
+
+              <span className="text-[10px] text-slate-400">
+                {isCritical ? 'Critical risk' : 'Requires attention'}
+              </span>
+            </div>
+
+            <h3 className="text-lg font-bold text-white mt-3 leading-snug">
+              {plan.faultSummary}
+            </h3>
+
+            <p className="text-sm text-slate-300 mt-2 leading-relaxed">
+              {plan.rootCause}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-xl bg-[#0d1624] border border-white/10 p-4">
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 rounded-lg bg-[#173b43] flex items-center justify-center text-[#42c9ad] flex-shrink-0">
+            <BookOpen size={18} />
+          </div>
+
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-white">
+              Reference used
+            </p>
+
+            <p className="text-xs text-slate-400 mt-1 leading-relaxed break-words">
+              {plan.authorityCitation}
+            </p>
+          </div>
+        </div>
       </div>
 
       <div>
-        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 mb-2.5 flex items-center space-x-1.5">
-          <Wrench className="w-4 h-4 text-tactical-accent" />
-          <span>Step-by-Step Electrical Circuit Isolation Sequence</span>
-        </h4>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-9 h-9 rounded-lg bg-[#28354a] flex items-center justify-center text-amber-400">
+            <Wrench size={18} />
+          </div>
 
-        <div className="space-y-2.5">
+          <div>
+            <h3 className="text-sm font-bold text-white">
+              Recommended tests
+            </h3>
+            <p className="text-xs text-slate-400 mt-1">
+              Follow these steps to isolate the fault.
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-3">
           {plan.recommendedSteps.map((step) => (
             <div
               key={step.stepNumber}
-              className="bg-tactical-950 p-3 rounded border border-tactical-800/80 hover:border-tactical-700 transition"
+              className="report-step"
             >
-              <div className="flex items-start space-x-3">
-                <span className="flex-shrink-0 w-6 h-6 rounded bg-tactical-800 border border-tactical-700 text-tactical-accent font-mono font-bold text-xs flex items-center justify-center">
-                  {step.stepNumber}
-                </span>
-                <div className="flex-grow space-y-1.5">
-                  <p className="text-xs text-slate-100 font-medium">{step.instruction}</p>
+              <div className="step-number">
+                {step.stepNumber}
+              </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-[11px] font-mono">
-                    <div className="bg-tactical-900 px-2 py-1 rounded border border-tactical-800">
-                      <span className="text-slate-400">Target: </span>
-                      <span className="text-tactical-accent font-semibold">{step.targetTerminals.join(', ')}</span>
-                    </div>
-                    <div className="bg-tactical-900 px-2 py-1 rounded border border-tactical-800">
-                      <span className="text-slate-400">Expected: </span>
-                      <span className="text-emerald-400">{step.expectedValue}</span>
-                    </div>
-                    <div className="bg-tactical-900 px-2 py-1 rounded border border-tactical-800">
-                      <span className="text-slate-400">Meter Mode: </span>
-                      <span className="text-cyan-400">{step.multimeterMode}</span>
-                    </div>
+              <div className="flex-1 min-w-0 space-y-4">
+                <p className="text-sm text-slate-100 font-medium leading-relaxed">
+                  {step.instruction}
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div className="step-detail">
+                    <span className="step-detail-label">
+                      Test points
+                    </span>
+
+                    <span className="step-detail-value text-amber-400">
+                      {step.targetTerminals.join(', ')}
+                    </span>
                   </div>
 
-                  <p className="text-[11px] text-red-300/80 bg-red-950/20 px-2 py-1 rounded border border-red-900/30">
-                    <span className="font-semibold text-red-300">Failure Signature: </span>
-                    {step.failureCondition}
-                  </p>
+                  <div className="step-detail">
+                    <span className="step-detail-label">
+                      Expected reading
+                    </span>
+
+                    <span className="step-detail-value text-[#42c9ad]">
+                      {step.expectedValue}
+                    </span>
+                  </div>
+
+                  <div className="step-detail">
+                    <span className="step-detail-label">
+                      Meter setting
+                    </span>
+
+                    <span className="step-detail-value">
+                      {step.multimeterMode}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="failure-note">
+                  <span className="font-bold text-red-300">
+                    If the reading is wrong:{' '}
+                  </span>
+                  {step.failureCondition}
                 </div>
               </div>
             </div>
@@ -119,13 +241,28 @@ export const DiagnosticReport: React.FC<DiagnosticReportProps> = ({
         </div>
       </div>
 
-      <div className="bg-tactical-950 p-3 rounded border border-tactical-800 flex items-start space-x-2 text-xs text-slate-300">
-        <CheckSquare className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
-        <div>
-          <span className="font-bold text-slate-200">Required Preventive Action: </span>
-          <span>{plan.preventiveAction}</span>
+      <div className="rounded-xl bg-[rgba(66,201,173,0.055)] border border-[rgba(66,201,173,0.2)] p-5">
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 rounded-lg bg-[#173b43] flex items-center justify-center text-[#42c9ad] flex-shrink-0">
+            <ShieldCheck size={19} />
+          </div>
+
+          <div className="flex-1">
+            <h3 className="text-sm font-bold text-white">
+              What to do after the repair
+            </h3>
+
+            <p className="text-sm text-slate-300 mt-2 leading-relaxed">
+              {plan.preventiveAction}
+            </p>
+          </div>
+
+          <CheckSquare
+            size={17}
+            className="text-[#42c9ad] flex-shrink-0"
+          />
         </div>
       </div>
-    </div>
+    </section>
   );
 };

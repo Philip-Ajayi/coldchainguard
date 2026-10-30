@@ -1,5 +1,5 @@
 import React from 'react';
-import { Gauge, ShieldAlert } from 'lucide-react';
+import { Gauge, ShieldAlert, Activity } from 'lucide-react';
 
 interface MultimeterProps {
   voltage: string;
@@ -19,93 +19,118 @@ export const MultimeterInput: React.FC<MultimeterProps> = ({
   const vNum = parseFloat(voltage);
   const isVoltageLow = !isNaN(vNum) && vNum < 10.4;
 
+  const measurements = [
+    {
+      field: 'voltage',
+      label: 'Supply voltage',
+      description: 'Battery terminals (+) and (-)',
+      value: voltage,
+      unit: 'V DC',
+      placeholder: '12.1',
+      step: '0.1',
+      note: 'Cut-out threshold: 10.4V',
+      alert: isVoltageLow,
+      alertText: 'Voltage is below the cut-out threshold.',
+    },
+    {
+      field: 'resistance',
+      label: 'Motor resistance',
+      description: 'Stator winding resistance',
+      value: resistance,
+      unit: 'Ω',
+      placeholder: '2.1',
+      step: '0.1',
+      note: 'Reference: 2.1Ω ± 0.3',
+    },
+    {
+      field: 'fanAmperage',
+      label: 'Fan current',
+      description: 'Current measured at terminal F',
+      value: fanAmperage,
+      unit: 'A',
+      placeholder: '0.35',
+      step: '0.05',
+      note: 'Maximum: 0.50A',
+    },
+    {
+      field: 'ambientTemp',
+      label: 'Ambient temperature',
+      description: 'Temperature around the cabinet',
+      value: ambientTemp,
+      unit: '°C',
+      placeholder: '34',
+      step: '1',
+      note: 'WHO PQS Class T limit: 43°C',
+    },
+  ];
+
   return (
-    <div className="bg-tactical-900 border border-tactical-700/60 rounded-lg p-4 shadow-xl">
-      <div className="flex items-center space-x-2 mb-3 border-b border-tactical-700/50 pb-2">
-        <Gauge className="w-5 h-5 text-tactical-cyan" />
-        <h2 className="text-sm font-bold uppercase tracking-wider text-slate-200">
-          Field Multimeter Telemetry
-        </h2>
+    <section className="section-card">
+      <div className="section-heading">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#173b43] flex items-center justify-center text-[#42c9ad]">
+            <Gauge size={20} />
+          </div>
+
+          <div>
+            <h2 className="section-title">Electrical measurements</h2>
+            <p className="section-description">
+              Enter the values from your multimeter.
+            </p>
+          </div>
+        </div>
+
+        <span className="status-pill">
+          <Activity size={13} className="text-[#42c9ad]" />
+          Field readings
+        </span>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-tactical-950 p-2.5 rounded border border-tactical-700">
-          <label className="text-[11px] font-mono font-medium text-slate-400 block mb-1">
-            TERMINAL DC VOLTS [+] & [-]
-          </label>
-          <div className="relative">
-            <input
-              type="number"
-              step="0.1"
-              value={voltage}
-              onChange={(e) => onChange('voltage', e.target.value)}
-              className="w-full bg-tactical-900 border border-tactical-700 rounded px-2.5 py-1.5 font-mono text-sm text-white focus:outline-none focus:border-tactical-cyan"
-              placeholder="12.1"
-            />
-            <span className="absolute right-2.5 top-2 text-xs font-mono text-slate-500">V DC</span>
-          </div>
-          {isVoltageLow && (
-            <div className="flex items-center space-x-1 mt-1 text-[10px] text-amber-400 font-mono">
-              <ShieldAlert className="w-3 h-3" />
-              <span>Below 10.4V Cut-Out</span>
+      <div className="measurement-grid">
+        {measurements.map((item) => (
+          <div className="measurement-card" key={item.field}>
+            <label
+              htmlFor={`measurement-${item.field}`}
+              className="field-label"
+            >
+              {item.label}
+            </label>
+
+            <p className="text-[10px] text-slate-500 mb-3">
+              {item.description}
+            </p>
+
+            <div className="relative">
+              <input
+                id={`measurement-${item.field}`}
+                type="number"
+                step={item.step}
+                value={item.value}
+                onChange={(e) =>
+                  onChange(item.field, e.target.value)
+                }
+                className="field-input"
+                placeholder={item.placeholder}
+              />
+
+              <span className="measurement-unit mono">
+                {item.unit}
+              </span>
             </div>
-          )}
-        </div>
 
-        <div className="bg-tactical-950 p-2.5 rounded border border-tactical-700">
-          <label className="text-[11px] font-mono font-medium text-slate-400 block mb-1">
-            MOTOR STATOR RESISTANCE
-          </label>
-          <div className="relative">
-            <input
-              type="number"
-              step="0.1"
-              value={resistance}
-              onChange={(e) => onChange('resistance', e.target.value)}
-              className="w-full bg-tactical-900 border border-tactical-700 rounded px-2.5 py-1.5 font-mono text-sm text-white focus:outline-none focus:border-tactical-cyan"
-              placeholder="2.1"
-            />
-            <span className="absolute right-2.5 top-2 text-xs font-mono text-slate-500">Ω (Ohms)</span>
+            {item.alert ? (
+              <div className="measurement-alert">
+                <ShieldAlert size={13} />
+                <span>{item.alertText}</span>
+              </div>
+            ) : (
+              <span className="measurement-note">
+                {item.note}
+              </span>
+            )}
           </div>
-          <span className="text-[10px] font-mono text-slate-500 block mt-1">WHO Norm: 2.1Ω ± 0.3</span>
-        </div>
-
-        <div className="bg-tactical-950 p-2.5 rounded border border-tactical-700">
-          <label className="text-[11px] font-mono font-medium text-slate-400 block mb-1">
-            FAN CURRENT LOAD [F]
-          </label>
-          <div className="relative">
-            <input
-              type="number"
-              step="0.05"
-              value={fanAmperage}
-              onChange={(e) => onChange('fanAmperage', e.target.value)}
-              className="w-full bg-tactical-900 border border-tactical-700 rounded px-2.5 py-1.5 font-mono text-sm text-white focus:outline-none focus:border-tactical-cyan"
-              placeholder="0.30"
-            />
-            <span className="absolute right-2.5 top-2 text-xs font-mono text-slate-500">AMPS</span>
-          </div>
-          <span className="text-[10px] font-mono text-slate-500 block mt-1">Max Ceiling: 0.50A</span>
-        </div>
-
-        <div className="bg-tactical-950 p-2.5 rounded border border-tactical-700">
-          <label className="text-[11px] font-mono font-medium text-slate-400 block mb-1">
-            CABINET ENCLOSURE TEMP
-          </label>
-          <div className="relative">
-            <input
-              type="number"
-              step="1"
-              value={ambientTemp}
-              onChange={(e) => onChange('ambientTemp', e.target.value)}
-              className="w-full bg-tactical-900 border border-tactical-700 rounded px-2.5 py-1.5 font-mono text-sm text-white focus:outline-none focus:border-tactical-cyan"
-              placeholder="34"
-            />
-            <span className="absolute right-2.5 top-2 text-xs font-mono text-slate-500">°C</span>
-          </div>
-          <span className="text-[10px] font-mono text-slate-500 block mt-1">PQS Limit: 43°C Class T</span>
-        </div>
+        ))}
       </div>
-    </div>
+    </section>
   );
 };

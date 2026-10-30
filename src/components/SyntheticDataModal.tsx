@@ -1,5 +1,15 @@
 import React from 'react';
-import { X, Database, Sliders, ArrowRight } from 'lucide-react';
+import {
+  X,
+  Database,
+  ArrowRight,
+  Activity,
+  Thermometer,
+  Zap,
+  Cpu,
+  Gauge,
+  BookOpen,
+} from 'lucide-react';
 import { SyntheticBenchmarkCase } from '../types';
 
 interface SyntheticDataModalProps {
@@ -18,88 +28,186 @@ export const SyntheticDataModal: React.FC<SyntheticDataModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="bg-tactical-900 border border-tactical-700 rounded-lg max-w-3xl w-full p-5 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between border-b border-tactical-700/60 pb-3">
-          <div className="flex items-center space-x-2">
-            <Database className="w-5 h-5 text-tactical-cyan" />
+    <div className="modal-overlay">
+      <div className="modal-panel max-w-[850px]">
+        <div className="modal-heading">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl bg-[#26344a] flex items-center justify-center text-amber-400">
+              <Database size={21} />
+            </div>
+
             <div>
-              <h3 className="text-sm font-bold uppercase tracking-wider text-white">
-                Synthetic Benchmark Data & Ground Truth Transparency
+              <h3 className="modal-title">
+                Test scenario library
               </h3>
-              <p className="text-[11px] font-mono text-slate-400">
-                WHO PQS E003 Pre-calibrated Electrical Fault Scenarios
+
+              <p className="modal-description">
+                Try known fault scenarios using sample readings.
               </p>
             </div>
           </div>
-          <button type="button" onClick={onClose} className="text-slate-400 hover:text-white">
-            <X className="w-5 h-5" />
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="modal-close"
+            aria-label="Close benchmarks"
+          >
+            <X size={18} />
           </button>
         </div>
 
-        <div className="bg-tactical-950 p-3 rounded border border-tactical-800 text-xs text-slate-300 leading-relaxed">
-          <span className="font-bold text-tactical-accent">How This Works: </span>
-          ColdChainGuard uses these pre-calibrated synthetic bench datasets to simulate extreme physical field conditions (such as rotor lock or line voltage drops) without requiring a physical refrigerator. Technicians can inspect the exact telemetry values used and click <strong>Apply To Live Bench</strong> to execute real-time isolation, or overwrite them with actual physical multimeter probes.
+        <div className="modal-info flex items-start gap-3 mb-5">
+          <BookOpen
+            size={18}
+            className="flex-shrink-0 mt-0.5 text-[#42c9ad]"
+          />
+
+          <p>
+            These are simulated test cases, not readings from a
+            physical refrigerator. Select a scenario to load its
+            values into the diagnostic bench.
+          </p>
+        </div>
+
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h4 className="text-sm font-bold text-white">
+              Available scenarios
+            </h4>
+
+            <p className="text-xs text-slate-500 mt-1">
+              {benchmarks.length} reference cases
+            </p>
+          </div>
+
+          <span className="status-pill">
+            <Activity size={13} className="text-[#42c9ad]" />
+            Sample data
+          </span>
         </div>
 
         <div className="space-y-3">
           {benchmarks.map((bm) => (
             <div
               key={bm.id}
-              className="bg-tactical-950 p-3.5 rounded border border-tactical-800 hover:border-tactical-700 transition space-y-2"
+              className="bg-[#0d1624] border border-white/10 rounded-xl p-4 hover:border-amber-400/30 transition"
             >
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-[10px] font-mono font-bold bg-tactical-800 px-1.5 py-0.5 rounded text-tactical-accent">
+              <div className="flex items-start justify-between gap-4 flex-wrap">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="mono text-[10px] text-amber-400 bg-amber-400/10 px-2 py-1 rounded-md">
                       {bm.id}
                     </span>
-                    <h4 className="text-xs font-bold text-white">{bm.name}</h4>
+
+                    <h4 className="text-sm font-bold text-white">
+                      {bm.name}
+                    </h4>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1">{bm.description}</p>
+
+                  <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+                    {bm.description}
+                  </p>
                 </div>
+
                 <button
                   type="button"
                   onClick={() => {
                     onApplyBenchmark(bm);
                     onClose();
                   }}
-                  className="bg-tactical-800 hover:bg-tactical-700 border border-tactical-700 text-tactical-accent hover:text-white px-3 py-1.5 rounded text-xs font-mono font-semibold flex items-center space-x-1 transition"
+                  className="btn-primary !py-2.5 !px-3 !text-xs"
                 >
-                  <span>Apply To Live Bench</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  Load scenario
+                  <ArrowRight size={14} />
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-[10px] font-mono bg-tactical-900/60 p-2 rounded border border-tactical-800">
-                <div>
-                  <span className="text-slate-500 block">MODEL:</span>
-                  <span className="text-slate-200">{bm.compressorModel}</span>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-4">
+                <div className="step-detail">
+                  <span className="step-detail-label flex items-center gap-1">
+                    <Cpu size={11} />
+                    Compressor
+                  </span>
+
+                  <span className="step-detail-value">
+                    {bm.compressorModel}
+                  </span>
                 </div>
-                <div>
-                  <span className="text-slate-500 block">BLINK CODE:</span>
-                  <span className="text-tactical-accent font-bold">{bm.blinkCode} Blinks</span>
+
+                <div className="step-detail">
+                  <span className="step-detail-label flex items-center gap-1">
+                    <Activity size={11} />
+                    LED flashes
+                  </span>
+
+                  <span className="step-detail-value text-amber-400">
+                    {bm.blinkCode}
+                  </span>
                 </div>
-                <div>
-                  <span className="text-slate-500 block">VOLTAGE:</span>
-                  <span className="text-slate-200">{bm.inputVoltage}V DC</span>
+
+                <div className="step-detail">
+                  <span className="step-detail-label flex items-center gap-1">
+                    <Zap size={11} />
+                    Voltage
+                  </span>
+
+                  <span className="step-detail-value">
+                    {bm.inputVoltage}V
+                  </span>
                 </div>
-                <div>
-                  <span className="text-slate-500 block">STATOR RES:</span>
-                  <span className="text-slate-200">{bm.windingResistance} Ω</span>
+
+                <div className="step-detail">
+                  <span className="step-detail-label flex items-center gap-1">
+                    <Gauge size={11} />
+                    Resistance
+                  </span>
+
+                  <span className="step-detail-value">
+                    {bm.windingResistance}Ω
+                  </span>
                 </div>
-                <div>
-                  <span className="text-slate-500 block">AMBIENT:</span>
-                  <span className="text-slate-200">{bm.ambientTemp}°C</span>
+
+                <div className="step-detail">
+                  <span className="step-detail-label flex items-center gap-1">
+                    <Thermometer size={11} />
+                    Temperature
+                  </span>
+
+                  <span className="step-detail-value">
+                    {bm.ambientTemp}°C
+                  </span>
                 </div>
               </div>
 
-              <div className="text-[11px] text-slate-300">
-                <span className="text-slate-500 font-mono">Expected Outcome: </span>
-                <span>{bm.expectedRootCause}</span>
+              <div className="mt-4 pt-3 border-t border-white/5">
+                <span className="text-[10px] text-slate-500 uppercase tracking-wider">
+                  Expected result
+                </span>
+
+                <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                  {bm.expectedRootCause}
+                </p>
               </div>
             </div>
           ))}
+
+          {benchmarks.length === 0 && (
+            <div className="text-center py-12">
+              <Database
+                size={28}
+                className="text-slate-600 mx-auto mb-3"
+              />
+
+              <p className="text-sm font-semibold text-slate-300">
+                No test scenarios available
+              </p>
+
+              <p className="text-xs text-slate-500 mt-1">
+                The benchmark library could not be loaded.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

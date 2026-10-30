@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { X, QrCode, Lock, Download, Check } from 'lucide-react';
+import {
+  X,
+  QrCode,
+  Lock,
+  Download,
+  Check,
+  ShieldCheck,
+  ClipboardList,
+} from 'lucide-react';
 import { DiagnosticPlan } from '../types';
 
 interface MaintenanceLogModalProps {
@@ -21,10 +29,12 @@ export const MaintenanceLogModal: React.FC<MaintenanceLogModalProps> = ({
   resistance,
   compressorModel,
 }) => {
-  const [clinicId, setClinicId] = useState("UNICEF-SSA-CLINIC-409");
-  const [technicianId, setTechnicianId] = useState("TECH-MSF-382");
-  const [serialNumber, setSerialNumber] = useState("BD35F-883921-X");
-  const [correctiveAction, setCorrectiveAction] = useState("Measured stator coils. Disconnected condenser fan to verify start.");
+  const [clinicId, setClinicId] = useState('UNICEF-SSA-CLINIC-409');
+  const [technicianId, setTechnicianId] = useState('TECH-MSF-382');
+  const [serialNumber, setSerialNumber] = useState('BD35F-883921-X');
+  const [correctiveAction, setCorrectiveAction] = useState(
+    'Measured stator coils. Disconnected condenser fan to verify start.'
+  );
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [hash, setHash] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -33,6 +43,7 @@ export const MaintenanceLogModal: React.FC<MaintenanceLogModalProps> = ({
 
   const handleGenerateSignedLog = async () => {
     setLoading(true);
+
     try {
       const response = await fetch('/api/export-log', {
         method: 'POST',
@@ -45,113 +56,221 @@ export const MaintenanceLogModal: React.FC<MaintenanceLogModalProps> = ({
           blinkCode,
           voltageReading: parseFloat(voltage) || 12.1,
           resistanceReading: parseFloat(resistance) || 2.1,
-          identifiedRootCause: plan?.faultSummary || "Routine Diagnostic",
-          correctiveAction
-        })
+          identifiedRootCause: plan?.faultSummary || 'Routine Diagnostic',
+          correctiveAction,
+        }),
       });
+
       const data = await response.json();
+
       if (data.success) {
         setQrDataUrl(data.qrDataUrl);
         setHash(data.hash);
       }
     } catch {
-      alert("Error generating encrypted maintenance record.");
+      alert('Error generating encrypted maintenance record.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="bg-tactical-900 border border-tactical-700 rounded-lg max-w-xl w-full p-5 shadow-2xl space-y-4">
-        <div className="flex items-center justify-between border-b border-tactical-700/60 pb-3">
-          <div className="flex items-center space-x-2">
-            <Lock className="w-5 h-5 text-tactical-accent" />
-            <h3 className="text-sm font-bold uppercase tracking-wider text-white">
-              Encrypted Offline Maintenance Manifest (HMAC-SHA256)
-            </h3>
+    <div className="modal-overlay">
+      <div className="modal-panel max-w-[620px]">
+        <div className="modal-heading">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#173b43] flex items-center justify-center text-[#42c9ad]">
+              <ClipboardList size={20} />
+            </div>
+
+            <div>
+              <h3 className="modal-title">
+                Maintenance record
+              </h3>
+
+              <p className="modal-description">
+                Record the work carried out on this refrigerator.
+              </p>
+            </div>
           </div>
-          <button type="button" onClick={onClose} className="text-slate-400 hover:text-white">
-            <X className="w-5 h-5" />
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="modal-close"
+            aria-label="Close maintenance record"
+          >
+            <X size={18} />
           </button>
         </div>
 
         {!qrDataUrl ? (
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-[11px] font-mono text-slate-400 block mb-1">CLINIC FACILITY ID</label>
-                <input
-                  type="text"
-                  value={clinicId}
-                  onChange={(e) => setClinicId(e.target.value)}
-                  className="w-full bg-tactical-950 border border-tactical-700 rounded px-2.5 py-1.5 text-xs font-mono text-white"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] font-mono text-slate-400 block mb-1">TECHNICIAN BADGE ID</label>
-                <input
-                  type="text"
-                  value={technicianId}
-                  onChange={(e) => setTechnicianId(e.target.value)}
-                  className="w-full bg-tactical-950 border border-tactical-700 rounded px-2.5 py-1.5 text-xs font-mono text-white"
-                />
-              </div>
+          <div className="space-y-5">
+            <div className="modal-info flex items-start gap-3">
+              <Lock size={18} className="flex-shrink-0 mt-0.5 text-[#42c9ad]" />
+
+              <p>
+                Your maintenance details will be signed and prepared
+                as a QR code for offline record keeping.
+              </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-[11px] font-mono text-slate-400 block mb-1">EQUIPMENT SERIAL #</label>
-                <input
-                  type="text"
-                  value={serialNumber}
-                  onChange={(e) => setSerialNumber(e.target.value)}
-                  className="w-full bg-tactical-950 border border-tactical-700 rounded px-2.5 py-1.5 text-xs font-mono text-white"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] font-mono text-slate-400 block mb-1">RECORDED BLINK CODE</label>
-                <input
-                  type="text"
-                  disabled
-                  value={`${blinkCode} Flash(es)`}
-                  className="w-full bg-tactical-950/60 border border-tactical-800 rounded px-2.5 py-1.5 text-xs font-mono text-slate-400"
-                />
+            <div>
+              <p className="text-xs font-bold text-white mb-3">
+                Facility and technician
+              </p>
+
+              <div className="modal-form-grid">
+                <div className="modal-field">
+                  <label className="field-label">
+                    Facility ID
+                  </label>
+
+                  <input
+                    type="text"
+                    value={clinicId}
+                    onChange={(e) => setClinicId(e.target.value)}
+                    className="field-input mono"
+                  />
+                </div>
+
+                <div className="modal-field">
+                  <label className="field-label">
+                    Technician ID
+                  </label>
+
+                  <input
+                    type="text"
+                    value={technicianId}
+                    onChange={(e) => setTechnicianId(e.target.value)}
+                    className="field-input mono"
+                  />
+                </div>
               </div>
             </div>
 
             <div>
-              <label className="text-[11px] font-mono text-slate-400 block mb-1">CORRECTIVE ACTIONS TAKEN</label>
+              <p className="text-xs font-bold text-white mb-3">
+                Equipment details
+              </p>
+
+              <div className="modal-form-grid">
+                <div className="modal-field">
+                  <label className="field-label">
+                    Equipment serial number
+                  </label>
+
+                  <input
+                    type="text"
+                    value={serialNumber}
+                    onChange={(e) => setSerialNumber(e.target.value)}
+                    className="field-input mono"
+                  />
+                </div>
+
+                <div className="modal-field">
+                  <label className="field-label">
+                    Fault code
+                  </label>
+
+                  <input
+                    type="text"
+                    disabled
+                    value={`${blinkCode} ${blinkCode === 1 ? 'flash' : 'flashes'}`}
+                    className="field-input mono opacity-60"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="field-label">
+                Work carried out
+              </label>
+
               <textarea
-                rows={3}
+                rows={4}
                 value={correctiveAction}
                 onChange={(e) => setCorrectiveAction(e.target.value)}
-                className="w-full bg-tactical-950 border border-tactical-700 rounded px-2.5 py-1.5 text-xs text-white"
+                className="field-textarea"
+                placeholder="Describe the tests and repairs completed..."
               />
+            </div>
+
+            <div className="bg-[#0c1421] rounded-xl border border-white/10 p-4">
+              <p className="text-[10px] text-slate-500 uppercase tracking-wider">
+                Equipment being recorded
+              </p>
+
+              <div className="flex justify-between items-center mt-2">
+                <span className="text-sm font-semibold text-white">
+                  {compressorModel}
+                </span>
+
+                <span className="text-xs mono text-slate-400">
+                  {voltage}V · {resistance}Ω
+                </span>
+              </div>
             </div>
 
             <button
               type="button"
               onClick={handleGenerateSignedLog}
               disabled={loading}
-              className="w-full bg-tactical-accent hover:bg-amber-600 text-black font-bold text-xs py-2 rounded flex items-center justify-center space-x-2 transition"
+              className="btn-primary w-full !py-3.5"
             >
-              <QrCode className="w-4 h-4" />
-              <span>{loading ? "Generating Cryptographic Manifest..." : "Sign & Generate QR Sync Payload"}</span>
+              {loading ? (
+                <span className="loading-ring !w-4 !h-4 !border-2" />
+              ) : (
+                <QrCode size={18} />
+              )}
+
+              <span>
+                {loading
+                  ? 'Preparing your record...'
+                  : 'Sign and generate QR code'}
+              </span>
             </button>
           </div>
         ) : (
-          <div className="space-y-4 text-center">
-            <div className="bg-white p-3 rounded inline-block shadow-lg">
-              <img src={qrDataUrl} alt="Maintenance Log QR" className="w-48 h-48 mx-auto" />
+          <div className="text-center space-y-5">
+            <div className="w-14 h-14 rounded-full bg-[#173b43] flex items-center justify-center text-[#42c9ad] mx-auto">
+              <ShieldCheck size={27} />
             </div>
 
-            <div className="bg-tactical-950 p-2.5 rounded border border-tactical-800 text-left font-mono text-[10px] space-y-1">
-              <div className="text-slate-400">HMAC-SHA256 DIGITAL SIGNATURE:</div>
-              <div className="text-emerald-400 break-all">{hash}</div>
+            <div>
+              <h3 className="text-lg font-bold text-white">
+                Record generated
+              </h3>
+
+              <p className="text-xs text-slate-400 mt-2">
+                Your maintenance record is ready to save.
+              </p>
             </div>
 
-            <div className="flex space-x-2">
+            <div className="inline-block bg-white p-4 rounded-2xl shadow-xl">
+              <img
+                src={qrDataUrl}
+                alt="Maintenance record QR code"
+                className="w-48 h-48 mx-auto"
+              />
+            </div>
+
+            <div className="text-left bg-[#0c1421] border border-white/10 p-4 rounded-xl">
+              <div className="flex items-center gap-2 mb-2">
+                <Lock size={14} className="text-[#42c9ad]" />
+
+                <span className="text-[10px] text-slate-400 uppercase tracking-wider">
+                  Digital signature · HMAC-SHA256
+                </span>
+              </div>
+
+              <p className="text-[10px] mono text-[#42c9ad] break-all leading-relaxed">
+                {hash}
+              </p>
+            </div>
+
+            <div className="flex gap-3">
               <button
                 type="button"
                 onClick={() => {
@@ -160,18 +279,19 @@ export const MaintenanceLogModal: React.FC<MaintenanceLogModalProps> = ({
                   a.download = `COLDCHAIN-LOG-${Date.now()}.png`;
                   a.click();
                 }}
-                className="flex-1 bg-tactical-800 hover:bg-tactical-700 border border-tactical-700 text-white text-xs py-2 rounded flex items-center justify-center space-x-1.5"
+                className="btn-secondary flex-1"
               >
-                <Download className="w-3.5 h-3.5" />
-                <span>Save QR Image</span>
+                <Download size={15} />
+                Save QR image
               </button>
+
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 bg-tactical-accent hover:bg-amber-600 text-black font-bold text-xs py-2 rounded flex items-center justify-center space-x-1.5"
+                className="btn-primary flex-1"
               >
-                <Check className="w-3.5 h-3.5" />
-                <span>Done</span>
+                <Check size={16} />
+                Done
               </button>
             </div>
           </div>
